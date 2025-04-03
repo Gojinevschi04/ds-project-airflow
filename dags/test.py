@@ -1,7 +1,7 @@
 import datetime
-import pendulum
 import os
 
+import pendulum
 import requests
 from airflow.decorators import dag, task
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
@@ -88,7 +88,7 @@ def ProcessEmployees():
             cur.execute(query)
             conn.commit()
             return 0
-        except Exception as e:
+        except Exception:
             return 1
 
     [create_employees_table, create_employees_temp_table] >> get_data() >> merge_data()

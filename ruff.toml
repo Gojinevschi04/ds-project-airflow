@@ -1,0 +1,31 @@
+line-length = 88
+target-version = "py313"
+exclude = [".venv", ".git", ".idea"]
+
+[lint]
+preview = true
+select = [
+    "E", # General errors (PEP8 compliance)
+    "F", # Pyflakes errors (unused imports, undefined variables)
+    "I", # Import-related errors (import order, isort compliance)
+    "B", # flake8-bugbear warnings (common Python pitfalls)
+    "C90", # Cyclomatic complexity warnings (overly complex code)
+    "Q", # flake8-Quotes (consistent use of single/double quotes)
+    "N", # Naming conventions (CamelCase for classes, etc.)
+    "T", # Type checking errors (missing type hints)
+    "W", # pycodestyle warnings (trailing whitespace, line length)
+    "ANN", # Annotations (missing or incorrect type annotations)
+    "F401", # Checks for unused imports
+    "E252" # Checks for missing whitespace around the equals
+]
+
+ignore = [
+    "ANN101", # ANN101 Missing type annotation for self in method
+    "ANN401", # Dynamically typed expressions (typing.Any) are disallowed
+    "ANN002", # Checks that function *args arguments have type annotations
+    "ANN003", # Checks that function **kwargs arguments have type annotations
+    "ANN102", # Checks that class method cls arguments have type annotations
+    "F821", # Import name in quotes "ExampleClass" not defined
+    "E722", # Checks for bare except catches in try-except statements
+    "N802", # Checks for functions names that do not follow the naming convention
+]
