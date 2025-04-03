@@ -1,0 +1,6 @@
+database:
+  host: localhost
+  user: ana
+  password: "1111"
+  name: my_db
+  port: "5432"

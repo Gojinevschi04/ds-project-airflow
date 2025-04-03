@@ -1,0 +1,7 @@
+api:
+  covid19:
+    base_url: "https://covid-api.com/api/"
+  weather:
+    base_url: "https://api.weatherapi.com/v1/"
+    api_key: "05d47f104e5245dab4783931252803"
+
