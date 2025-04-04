@@ -3,9 +3,8 @@ import logging
 import pandas as pd
 from airflow.decorators import dag, task
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-
-from plugins.hooks.covid import CovidApiHook
-from plugins.operators.db_insert import DbInsertOperator
+from hooks.covid import CovidApiHook
+from operators.db_insert import DbInsertOperator
 
 task_logger = logging.getLogger("airflow.task")
 

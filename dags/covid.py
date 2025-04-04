@@ -6,9 +6,8 @@ import pandas as pd
 from airflow.decorators import dag, task
 from airflow.models import Param
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-
-from plugins.hooks.covid import CovidApiHook
-from plugins.operators.db_insert import DbInsertOperator
+from hooks.covid import CovidApiHook
+from operators.db_insert import DbInsertOperator
 
 RUN_HISTORICAL = os.getenv("RUN_HISTORICAL", "false").lower() == "true"
 

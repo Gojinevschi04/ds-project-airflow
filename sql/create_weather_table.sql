@@ -1,29 +1,28 @@
-create table if not exists weather
-(
-    id                   bigserial not null
-        constraint weather_pk
-            primary key,
-    date                 date      not null,
-    country_id           integer   not null
-        constraint weather_regions_id_fk
-            references regions (id),
-    maxtemp_c            real      not null,
-    maxtemp_f            real      not null,
-    mintemp_c            real      not null,
-    mintemp_f            real      not null,
-    avgtemp_c            real      not null,
-    avgtemp_f            real      not null,
-    maxwind_mph          real      not null,
-    maxwind_kph          real      not null,
-    totalprecip_mm       real      not null,
-    totalprecip_in       real      not null,
-    totalsnow_cm         real      not null,
-    avgvis_km            real      not null,
-    avgvis_miles         real      not null,
-    avghumidity          real      not null,
-    daily_will_it_rain   real      not null,
-    daily_chance_of_rain real      not null,
-    daily_will_it_snow   real      not null,
-    daily_chance_of_snow real      not null,
-    uv                   real      not null
-);
+CREATE TABLE IF NOT EXISTS weather
+    (
+        id bigserial NOT NULL
+            CONSTRAINT weather_pk
+                PRIMARY KEY,
+        date date NOT NULL,
+        country_id integer NOT NULL
+            CONSTRAINT weather_regions_id_fk REFERENCES regions (id),
+        maxtemp_c real NOT NULL,
+        maxtemp_f real NOT NULL,
+        mintemp_c real NOT NULL,
+        mintemp_f real NOT NULL,
+        avgtemp_c real NOT NULL,
+        avgtemp_f real NOT NULL,
+        maxwind_mph real NOT NULL,
+        maxwind_kph real NOT NULL,
+        totalprecip_mm real NOT NULL,
+        totalprecip_in real NOT NULL,
+        totalsnow_cm real NOT NULL,
+        avgvis_km real NOT NULL,
+        avgvis_miles real NOT NULL,
+        avghumidity real NOT NULL,
+        daily_will_it_rain real NOT NULL,
+        daily_chance_of_rain real NOT NULL,
+        daily_will_it_snow real NOT NULL,
+        daily_chance_of_snow real NOT NULL,
+        uv real NOT NULL
+    );

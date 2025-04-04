@@ -28,7 +28,10 @@ class DbInsertOperator(BaseOperator):
         columns_names = ", ".join(columns)
         values = ", ".join(["%s"] * len(columns))
 
-        query = f"insert into {self.table} ({columns_names}) values ({values})"
+        query = f"""INSERT INTO {self.table}
+         ({columns_names})
+         VALUES ({values})
+         ON CONFLICT DO NOTHING"""
 
         try:
             postgres_hook = PostgresHook(postgres_conn_id=self.postgres_conn_id)
