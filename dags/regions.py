@@ -1,4 +1,5 @@
 import logging
+import os
 
 import pandas as pd
 from airflow.decorators import dag, task
@@ -16,21 +17,21 @@ task_logger = logging.getLogger("airflow.task")
 def Regions() -> None:
     init = SQLExecuteQueryOperator(
         task_id="create_regions_table",
-        conn_id="tutorial_pg_conn",
+        conn_id="pg_conn",
         sql="sql/create_regions_table.sql",
     )
 
     @task
     def extract() -> None:
+        path = "../data/common/"
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         regions_hook = CovidApiHook()
         data = regions_hook.get_countries()
-        path = "../data/common"
-        data.to_csv(f"{path}/regions.csv", index_label="index")
+        data.to_json(f"{path}/regions.json", orient="records")
 
     @task
     def transform(**kwargs) -> None:
-        df = pd.read_csv("../data/common/regions.csv")
-        df.drop(columns="index", inplace=True)
+        df = pd.read_json("../data/common/regions.json")
         df.rename(columns={"iso": "code"}, inplace=True)
         kwargs["ti"].xcom_push("regions_data", df.to_dict(orient="records"))
 
@@ -39,7 +40,7 @@ def Regions() -> None:
         ti_id="transform",
         ti_key="regions_data",
         table="regions",
-        postgres_conn_id="tutorial_pg_conn"
+        postgres_conn_id="pg_conn",
     )
 
     init >> extract() >> transform() >> load

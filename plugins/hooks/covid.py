@@ -14,7 +14,9 @@ class CovidApiHook(BaseHook):
     logger = logging.getLogger(__name__)
 
     def get_countries(self) -> pd.DataFrame:
-        response = requests.request(HTTPMethod.GET, os.path.join(self.base_url, "regions"))
+        response = requests.request(
+            HTTPMethod.GET, os.path.join(self.base_url, "regions")
+        )
 
         if response.status_code != HTTPStatus.OK:
             self.logger.error(f"Cant open url. Response code: {response.status_code}.")
@@ -32,9 +34,7 @@ class CovidApiHook(BaseHook):
         }
 
         response = requests.request(
-            HTTPMethod.GET,
-            os.path.join(self.base_url, "reports/total"),
-            params=params
+            HTTPMethod.GET, os.path.join(self.base_url, "reports/total"), params=params
         )
 
         if response.status_code != HTTPStatus.OK:

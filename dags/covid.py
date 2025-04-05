@@ -14,8 +14,9 @@ RUN_HISTORICAL = os.getenv("RUN_HISTORICAL", "false").lower() == "true"
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
-    # "start_date": datetime.date(2020, 2, 1)
-    # if RUN_HISTORICAL else datetime.date(2022, 2, 1),
+    "start_date": datetime.datetime(2020, 2, 1)
+    if RUN_HISTORICAL
+    else datetime.datetime(2022, 2, 1),
     "schedule_interval": "@daily",
     "retries": 1,
     "retry_delay": datetime.timedelta(minutes=5),
@@ -36,26 +37,31 @@ default_args = {
             format="date",
         ),
         "end_date": Param(
-    "2020-03-01",
+            "2020-02-02",
             type="string",
             format="date",
         ),
-    }
+    },
 )
 def Covid() -> None:
     init = SQLExecuteQueryOperator(
         task_id="create_covid_table",
-        conn_id="tutorial_pg_conn",
+        conn_id="pg_conn",
         sql="sql/create_covid_table.sql",
     )
 
     @task
     def extract(**context) -> None:
-        path = "../data/covid"
+        path = "../data/covid/"
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         covid_hook = CovidApiHook()
-        regions = pd.read_csv("../data/common/regions.csv")
-        current_date = datetime.datetime.strptime(context["params"]["start_date"], "%Y-%m-%d").date()
-        end_date = datetime.datetime.strptime(context["params"]["end_date"], "%Y-%m-%d").date()
+        regions = pd.read_json("../data/common/regions.json")
+        current_date = datetime.datetime.strptime(
+            context["params"]["start_date"], "%Y-%m-%d"
+        ).date()
+        end_date = datetime.datetime.strptime(
+            context["params"]["end_date"], "%Y-%m-%d"
+        ).date()
         step = datetime.timedelta(days=1)
 
         while current_date <= end_date:
@@ -68,9 +74,9 @@ def Covid() -> None:
                 result["country_id"] = int(index) + 1
                 dfs.append(result)
 
-            pd.DataFrame(dfs).to_csv(
-                f"{path}/covid_{current_date.strftime('%Y-%m-%d')}.csv",
-                index=False)
+            pd.DataFrame(dfs).to_json(
+                f"{path}/covid_{current_date.strftime('%Y-%m-%d')}.json"
+            )
             current_date += step
 
     @task
@@ -78,8 +84,8 @@ def Covid() -> None:
         folder_path = Path("../data/covid/")
 
         data = []
-        for file_path in folder_path.glob("*.csv"):
-            covid_data = pd.read_csv(file_path)
+        for file_path in folder_path.glob("*.json"):
+            covid_data = pd.read_json(file_path, orient="records", convert_dates=False)
             data += covid_data.to_dict("records")
 
         kwargs["ti"].xcom_push("covid_data", data)
@@ -89,7 +95,8 @@ def Covid() -> None:
         ti_id="transform",
         ti_key="covid_data",
         table="covid",
-        postgres_conn_id="tutorial_pg_conn",
+        postgres_conn_id="pg_conn",
+        unique_columns=["date", "country_id"],
     )
 
     init >> extract() >> transform() >> load

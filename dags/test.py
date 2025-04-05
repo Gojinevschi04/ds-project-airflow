@@ -56,7 +56,7 @@ def ProcessEmployees():
         with open(data_path, "w") as file:
             file.write(response.text)
 
-        postgres_hook = PostgresHook(postgres_conn_id="tutorial_pg_conn")
+        postgres_hook = PostgresHook(postgres_conn_id="pg_conn")
         conn = postgres_hook.get_conn()
         cur = conn.cursor()
         with open(data_path, "r") as file:
@@ -82,7 +82,7 @@ def ProcessEmployees():
               "Leave" = excluded."Leave";
         """
         try:
-            postgres_hook = PostgresHook(postgres_conn_id="tutorial_pg_conn")
+            postgres_hook = PostgresHook(postgres_conn_id="pg_conn")
             conn = postgres_hook.get_conn()
             cur = conn.cursor()
             cur.execute(query)
