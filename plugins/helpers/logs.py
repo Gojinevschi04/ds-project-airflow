@@ -33,13 +33,8 @@ class TransformLog(TypedDict):
     status: str
 
 
-def add_api_import_log(data: ApiImportLog, conn_id: str) -> None:
-    log_info = {
-        **data,
-        "start_time": data["start_time"].strftime(date_format),
-        "end_time": data["end_time"].strftime(date_format),
-    }
-    _insert_log(conn_id, log_info, "log_api_import")
+def add_log(data: ApiImportLog | ImportLog | TransformLog, conn_id: str, table: str) -> None:
+    _insert_log(conn_id, data, table)
 
 
 def add_import_log(data: ImportLog, conn_id: str) -> None:

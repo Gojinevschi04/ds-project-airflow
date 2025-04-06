@@ -65,16 +65,42 @@ def Weather() -> None:
         end_date = datetime.datetime.strptime(
             context["params"]["end_date"], "%Y-%m-%d"
         ).date()
+        ti = context.get("ti")
+        api_import_log = []
+        import_log = []
 
         for index, iso, _ in regions:
             result = weather_hook.get_weather(iso, index, start_date, end_date)
+            api_import_log.append({"country_id": index, **weather_hook.errors})
             if not result:
                 continue
-            pd.DataFrame(result).to_json(
-                f"{path}/weather_{iso}.json",
-                indent=2,
-                orient="records"
-            )
+            try:
+                file_name = f"weather_{iso}.json"
+                pd.DataFrame(result).to_json(
+                    f"{path}/{file_name}",
+                    indent=2,
+                    orient="records"
+                )
+            except Exception:
+                import_log.append(
+                    {
+                        "country_id": index,
+                        "batch_date": datetime.datetime.now().strftime("%Y-%m-%d"),
+                        "import_directory_name": path,
+                        "import_file_name": file_name,
+                        "file_created_date": datetime.datetime.now().strftime(
+                            "%Y-%m-%d"
+                        ),
+                        "file_last_modified_date": datetime.datetime.now().strftime(
+                            "%Y-%m-%d"
+                        ),
+                        "rows_count": len(result),
+                    }
+                )
+        if api_import_log:
+            ti.xcom_push(key="log_api_import", value=api_import_log)
+        if import_log:
+            ti.xcom_push(key="log_import", value=import_log)
 
     @task
     def transform(**kwargs) -> None:
@@ -84,6 +110,7 @@ def Weather() -> None:
         os.makedirs(os.path.dirname(destination_path_success), exist_ok=True)
         os.makedirs(os.path.dirname(destination_path_error), exist_ok=True)
 
+        transform_log = []
         data = []
         for file_path in source_path.glob("*.json"):
             file_name = file_path.name
@@ -96,9 +123,21 @@ def Weather() -> None:
                 shutil.move(file_path, os.path.join(destination_path_success, file_name))
 
             except Exception:
+                transform_log.append(
+                    {
+                        "batch_date": datetime.datetime.now().strftime("%Y-%m-%d"),
+                        "country_id": weather_data[0]["country_id"],
+                        "processed_directory_name": file_path,
+                        "processed_file_name": file_name,
+                        "rows_count": len(weather_data),
+                        "status": "error",
+                    }
+                )
                 shutil.move(file_path, os.path.join(destination_path_error, file_name))
 
         kwargs["ti"].xcom_push("weather_data", data)
+        if transform_log:
+            kwargs["ti"].xcom_push("log_transform", data)
 
     load = DbInsertOperator(
         task_id="load",

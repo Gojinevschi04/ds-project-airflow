@@ -12,6 +12,7 @@ from airflow.hooks.base import BaseHook
 class CovidApiHook(BaseHook):
     base_url: str = "https://covid-api.com/api/"
     logger = logging.getLogger(__name__)
+    errors = {}
 
     def get_countries(self) -> pd.DataFrame:
         response = requests.request(
@@ -33,12 +34,20 @@ class CovidApiHook(BaseHook):
             "iso": region_iso,
         }
 
+        start_time = datetime.datetime.now()
         response = requests.request(
-            HTTPMethod.GET, os.path.join(self.base_url, "reports/total"), params=params
+            HTTPMethod.GET, os.path.join(self.base_url, "reports/total/"), params=params
         )
+        end_time = datetime.datetime.now()
 
         if response.status_code != HTTPStatus.OK:
             self.logger.error(f"Cant open url. Response code: {response.status_code}.")
+            self.errors = {
+                    "code": response.status_code,
+                    "message": response.reason,
+                    "start_time": start_time.strftime("%Y-%m-%d"),
+                    "end_time": end_time.strftime("%Y-%m-%d"),
+                }
             return {}
 
         self.logger.info("Beginning request")
