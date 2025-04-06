@@ -1,4 +1,5 @@
-CREATE TABLE IF NOT EXISTS regions
+CREATE SCHEMA IF NOT EXISTS dbo;
+CREATE TABLE IF NOT EXISTS dbo.regions
     (
         id serial NOT NULL
             CONSTRAINT regions_pk

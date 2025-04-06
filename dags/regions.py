@@ -19,7 +19,12 @@ def Regions() -> None:
     init = SQLExecuteQueryOperator(
         task_id="create_regions_table",
         conn_id="pg_conn",
-        sql="sql/create_regions_table.sql",
+        sql=[
+            "sql/create_regions_table.sql",
+            "sql/create_api_import_log_table.sql",
+            "sql/create_import_log_table.sql",
+            "sql/create_transform_log_table.sql",
+        ],
     )
 
     @task

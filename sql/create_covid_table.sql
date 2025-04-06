@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS covid
+CREATE TABLE IF NOT EXISTS dbo.covid
     (
         id bigserial NOT NULL
             CONSTRAINT covid_pk
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS covid
         active_diff integer NOT NULL,
         fatality_rate real NOT NULL,
         country_id integer NOT NULL
-            CONSTRAINT covid_regions_id_fk REFERENCES regions (id),
+            CONSTRAINT covid_regions_id_fk REFERENCES dbo.regions (id),
         CONSTRAINT covid_pk_name_iso
             UNIQUE (country_id, date)
     );

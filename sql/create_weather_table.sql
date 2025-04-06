@@ -1,11 +1,11 @@
-CREATE TABLE IF NOT EXISTS weather
+CREATE TABLE IF NOT EXISTS dbo.weather
     (
         id bigserial NOT NULL
             CONSTRAINT weather_pk
                 PRIMARY KEY,
         date date NOT NULL,
         country_id integer NOT NULL
-            CONSTRAINT weather_regions_id_fk REFERENCES regions (id),
+            CONSTRAINT weather_regions_id_fk REFERENCES dbo.regions (id),
         maxtemp_c real NOT NULL,
         maxtemp_f real NOT NULL,
         mintemp_c real NOT NULL,

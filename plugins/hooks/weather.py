@@ -34,7 +34,7 @@ class WeatherApiHook(BaseHook):
 
         if response.status_code != HTTPStatus.OK:
             self.logger.error(f"Cant open url. Response code: {response.status_code}.")
-            return {}
+            return []
 
         self.logger.info("Beginning request")
         result = response.json()

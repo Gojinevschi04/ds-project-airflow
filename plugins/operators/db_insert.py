@@ -35,7 +35,7 @@ class DbInsertOperator(BaseOperator):
         values = ", ".join(["%s"] * len(columns))
 
         query = f"""
-                  INSERT INTO {self.table} ({columns_names})
+                  INSERT INTO dbo.{self.table} ({columns_names})
                   VALUES ({values})
                   """
         if self.unique_columns:
