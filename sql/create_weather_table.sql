@@ -24,5 +24,7 @@ CREATE TABLE IF NOT EXISTS weather
         daily_chance_of_rain real NOT NULL,
         daily_will_it_snow real NOT NULL,
         daily_chance_of_snow real NOT NULL,
-        uv real NOT NULL
+        uv real NOT NULL,
+        CONSTRAINT weather_pk_name_iso
+            UNIQUE (country_id, date)
     );
