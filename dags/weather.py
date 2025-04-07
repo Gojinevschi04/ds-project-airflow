@@ -17,9 +17,11 @@ RUN_HISTORICAL = Variable.get("RUN_HISTORICAL", "false") == "true"
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
-    "start_date": datetime.datetime(2025, 2, 1)
-    if RUN_HISTORICAL
-    else datetime.datetime(2025, 2, 1),
+    "start_date": (
+        datetime.datetime(2025, 2, 1)
+        if RUN_HISTORICAL
+        else datetime.datetime(2025, 2, 1)
+    ),
     "schedule_interval": "@daily",
     "retries": 1,
     "retry_delay": datetime.timedelta(minutes=5),

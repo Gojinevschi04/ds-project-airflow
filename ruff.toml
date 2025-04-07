@@ -29,4 +29,5 @@ ignore = [
     "F821", # Import name in quotes "ExampleClass" not defined
     "E722", # Checks for bare except catches in try-except statements
     "N802", # Checks for functions names that do not follow the naming convention
+    "C901", # Checks for functions with a high McCabe complexity
 ]
