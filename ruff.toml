@@ -16,7 +16,8 @@ select = [
     "W", # pycodestyle warnings (trailing whitespace, line length)
     "ANN", # Annotations (missing or incorrect type annotations)
     "F401", # Checks for unused imports
-    "E252" # Checks for missing whitespace around the equals
+    "E252", # Checks for missing whitespace around the equals,
+    "E501",
 ]
 
 ignore = [

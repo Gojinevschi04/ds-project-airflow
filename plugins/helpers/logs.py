@@ -1,9 +1,11 @@
 import datetime
+import logging
 from typing import TypedDict
 
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 date_format = "%Y/%m/%d %H:%M:%S"
+logger = logging.getLogger(__name__)
 
 
 class ApiImportLog(TypedDict):
@@ -33,37 +35,22 @@ class TransformLog(TypedDict):
     status: str
 
 
-def add_log(data: ApiImportLog | ImportLog | TransformLog, conn_id: str, table: str) -> None:
-    _insert_log(conn_id, data, table)
-
-
-def add_import_log(data: ImportLog, conn_id: str) -> None:
-    log_info = {
-        **data,
-        "batch_date": data["batch_date"].strftime(date_format),
-        "file_created_date": data["file_created_date"].strftime(date_format),
-        "file_last_modified_date": data["file_last_modified_date"].strftime(
-            date_format
-        ),
-    }
-    _insert_log(conn_id, log_info, "log_import")
-
-
-def add_transform_log(data: TransformLog, conn_id: str) -> None:
-    log_info = {
-        **data,
-        "batch_date": data["batch_date"].strftime(date_format),
-    }
-    _insert_log(conn_id, log_info, "log_transform")
-
-
-def _insert_log(conn_id: str, data: dict[str, str], table_name: str) -> None:
-    columns = [] if not data else list(data.keys())
-    data = list(data.values())
+def insert(conn_id: str, data: list[dict[str, str]], table_name: str) -> None:
+    columns = list(data[0].keys())
+    data = [list(record.values()) for record in data]
     columns_names = ", ".join(columns)
     values = ", ".join(["%s"] * len(columns))
-    query = f"insert into dbo.{table_name} ({columns_names}) values ({values})"
-    postgres_hook = PostgresHook(postgres_conn_id=conn_id)
-    conn = postgres_hook.get_conn()
-    cur = conn.cursor()
-    cur.executemany(query, data)
+
+    query = f"""
+            INSERT INTO dbo.{table_name} ({columns_names})
+            VALUES ({values})
+            """
+    try:
+        postgres_hook = PostgresHook(postgres_conn_id=conn_id)
+        conn = postgres_hook.get_conn()
+        cur = conn.cursor()
+        cur.executemany(query, data)
+        conn.commit()
+        logger.info(f"Inserted {len(data)} logs into {table_name} table.")
+    except Exception as e:
+        logger.error(f"An error occurred while inserting log data. Error: {e}.")

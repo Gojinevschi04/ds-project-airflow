@@ -19,14 +19,18 @@ class WeatherApiHook(BaseHook):
         super().__init__(**kwargs)
 
     def get_weather(
-            self, region_iso: str, country_id: str, start_date: datetime.date, end_date: datetime.date,
+        self,
+        region_iso: str,
+        country_id: str,
+        start_date: datetime.date,
+        end_date: datetime.date,
     ) -> list[dict[str, Any]]:
         params = {
             "dt": start_date.strftime("%Y-%m-%d"),
             "end_dt": end_date.strftime("%Y-%m-%d"),
             "hour": "12",
             "q": region_iso,
-            "key": self.api_key+"56789",
+            "key": self.api_key,
         }
 
         start_time = datetime.datetime.now()

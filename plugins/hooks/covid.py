@@ -36,18 +36,18 @@ class CovidApiHook(BaseHook):
 
         start_time = datetime.datetime.now()
         response = requests.request(
-            HTTPMethod.GET, os.path.join(self.base_url, "reports/total/"), params=params
+            HTTPMethod.GET, os.path.join(self.base_url, "reports/total"), params=params
         )
         end_time = datetime.datetime.now()
 
         if response.status_code != HTTPStatus.OK:
             self.logger.error(f"Cant open url. Response code: {response.status_code}.")
             self.errors = {
-                    "code": response.status_code,
-                    "message": response.reason,
-                    "start_time": start_time.strftime("%Y-%m-%d"),
-                    "end_time": end_time.strftime("%Y-%m-%d"),
-                }
+                "code_response": response.status_code,
+                "error_messages": response.reason,
+                "start_time": start_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "end_time": end_time.strftime("%Y-%m-%d %H:%M:%S"),
+            }
             return {}
 
         self.logger.info("Beginning request")

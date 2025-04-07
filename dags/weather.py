@@ -10,6 +10,7 @@ from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from helpers.db import select
 from hooks.weather import WeatherApiHook
 from operators.db_insert import DbInsertOperator
+from operators.log_insert import LogInsertOperator
 
 RUN_HISTORICAL = Variable.get("RUN_HISTORICAL", "false") == "true"
 
@@ -74,12 +75,11 @@ def Weather() -> None:
             api_import_log.append({"country_id": index, **weather_hook.errors})
             if not result:
                 continue
+            file_name = f"weather_{iso}.json"
+
             try:
-                file_name = f"weather_{iso}.json"
                 pd.DataFrame(result).to_json(
-                    f"{path}/{file_name}",
-                    indent=2,
-                    orient="records"
+                    f"{path}/{file_name}", indent=2, orient="records"
                 )
             except Exception:
                 import_log.append(
@@ -89,10 +89,10 @@ def Weather() -> None:
                         "import_directory_name": path,
                         "import_file_name": file_name,
                         "file_created_date": datetime.datetime.now().strftime(
-                            "%Y-%m-%d"
+                            "%Y-%m-%d %H:%M:%S"
                         ),
                         "file_last_modified_date": datetime.datetime.now().strftime(
-                            "%Y-%m-%d"
+                            "%Y-%m-%d %H:%M:%S"
                         ),
                         "rows_count": len(result),
                     }
@@ -114,13 +114,17 @@ def Weather() -> None:
         data = []
         for file_path in source_path.glob("*.json"):
             file_name = file_path.name
+            weather_data = []
             try:
-                weather_data = (pd.read_json(file_path, convert_dates=False)
-                                .to_dict(orient="records"))
+                weather_data = pd.read_json(file_path, convert_dates=False).to_dict(
+                    orient="records"
+                )
                 if not weather_data:
                     raise ValueError("Empty file.")
                 data += weather_data
-                shutil.move(file_path, os.path.join(destination_path_success, file_name))
+                shutil.move(
+                    file_path, os.path.join(destination_path_success, file_name)
+                )
 
             except Exception:
                 transform_log.append(
@@ -137,7 +141,7 @@ def Weather() -> None:
 
         kwargs["ti"].xcom_push("weather_data", data)
         if transform_log:
-            kwargs["ti"].xcom_push("log_transform", data)
+            kwargs["ti"].xcom_push("log_transform", transform_log)
 
     load = DbInsertOperator(
         task_id="load",
@@ -148,7 +152,12 @@ def Weather() -> None:
         unique_columns=["date", "country_id"],
     )
 
-    init >> extract() >> transform() >> load
+    log = LogInsertOperator(
+        task_id="log",
+        postgres_conn_id="pg_conn",
+    )
+
+    init >> extract() >> transform() >> load >> log
 
 
 dag = Weather()
