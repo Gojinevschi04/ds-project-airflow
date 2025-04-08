@@ -10,6 +10,22 @@ from helpers.weather import build_weather_data
 
 
 class WeatherApiHook(BaseHook):
+    """
+    A custom Airflow hook for retrieving historical weather data using the WeatherAPI.
+
+    This hook provides a method to fetch weather data for a specific region and time period.
+
+    Attributes:
+        base_url (str): The base URL for the WeatherAPI service.
+        logger (Logger): Logger instance for logging information and errors.
+        errors (dict): Stores error details from failed API requests.
+
+    Methods:
+        get_weather(region_iso: str, country_id: str, start_date: date, end_date: date) -> list[dict[str, Any]]:
+            Fetches historical weather data between two dates for the specified region.
+            Returns a list of weather records in dictionary format or an empty list on failure.
+    """
+
     base_url: str = "https://api.weatherapi.com/v1/"
     logger = logging.getLogger(__name__)
     errors = {}

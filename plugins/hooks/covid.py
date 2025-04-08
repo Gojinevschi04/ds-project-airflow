@@ -10,6 +10,28 @@ from airflow.hooks.base import BaseHook
 
 
 class CovidApiHook(BaseHook):
+    """
+    A custom Airflow hook for interacting with the COVID-19 API.
+
+    This hook provides methods to:
+    - Fetch the list of available countries/regions from the COVID-19 API.
+    - Retrieve daily COVID-19 statistics for a specific region and date.
+
+    Attributes:
+        base_url (str): The base URL for the COVID-19 API.
+        logger (Logger): Logger instance for logging information and errors.
+        errors (dict): Stores error information from failed API requests.
+
+    Methods:
+        get_countries() -> pd.DataFrame:
+            Sends a GET request to fetch the list of countries/regions.
+            Returns a pandas DataFrame with region information.
+
+        get_covid(region_iso: str, date: datetime.date) -> dict[str, Any]:
+            Sends a GET request to fetch COVID-19 statistics for the given region and date.
+            Returns a dictionary with the statistics or an empty dict on failure.
+    """
+
     base_url: str = "https://covid-api.com/api/"
     logger = logging.getLogger(__name__)
     errors = {}
