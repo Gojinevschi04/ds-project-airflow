@@ -8,9 +8,9 @@ from airflow.decorators import dag, task
 from airflow.models import Param, Variable
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from helpers.db import select
+from helpers.logs import LogTable, insert_log
 from hooks.covid import CovidApiHook
 from operators.db_insert import DbInsertOperator
-from operators.log_insert import LogInsertOperator
 
 RUN_HISTORICAL = Variable.get("RUN_HISTORICAL", "false") == "true"
 
@@ -68,7 +68,6 @@ def Covid() -> None:
             context["params"]["end_date"], "%Y-%m-%d"
         ).date()
         step = datetime.timedelta(days=1)
-        ti = context.get("ti")
         api_import_log = []
         import_log = []
 
@@ -76,7 +75,8 @@ def Covid() -> None:
             for index, iso, _ in regions:
                 dfs = []
                 result = covid_hook.get_covid(iso, current_date)
-                api_import_log.append({"country_id": index, **covid_hook.errors})
+                if covid_hook.errors:
+                    api_import_log.append({"country_id": index, **covid_hook.errors})
                 if not result:
                     continue
                 result["country_id"] = index
@@ -87,7 +87,6 @@ def Covid() -> None:
                     pd.DataFrame(dfs).to_json(
                         f"{path}/{file_name}", indent=2, orient="records"
                     )
-                    # raise Exception("test error import")
                 except Exception:
                     import_log.append(
                         {
@@ -105,10 +104,8 @@ def Covid() -> None:
                         }
                     )
             current_date += step
-        if api_import_log:
-            ti.xcom_push(key="log_api_import", value=api_import_log)
-        if import_log:
-            ti.xcom_push(key="log_import", value=import_log)
+        insert_log("pg_conn", api_import_log, LogTable.API_IMPORT_LOG)
+        insert_log("pg_conn", import_log, LogTable.IMPORT_LOG)
 
     @task
     def transform(**kwargs) -> None:
@@ -130,7 +127,6 @@ def Covid() -> None:
                 if not covid_data:
                     raise ValueError("Empty file.")
                 data += covid_data
-                # raise Exception("test error transform")
                 shutil.move(
                     file_path, os.path.join(destination_path_success, file_name)
                 )
@@ -149,8 +145,7 @@ def Covid() -> None:
                 shutil.move(file_path, os.path.join(destination_path_error, file_name))
 
         kwargs["ti"].xcom_push("covid_data", data)
-        if transform_log:
-            kwargs["ti"].xcom_push("log_transform", transform_log)
+        insert_log("pg_conn", transform_log, LogTable.TRANSFORM_LOG)
 
     load = DbInsertOperator(
         task_id="load",
@@ -161,12 +156,7 @@ def Covid() -> None:
         unique_columns=["date", "country_id"],
     )
 
-    log = LogInsertOperator(
-        task_id="log",
-        postgres_conn_id="pg_conn",
-    )
-
-    init >> extract() >> transform() >> load >> log
+    init >> extract() >> transform() >> load
 
 
 dag = Covid()

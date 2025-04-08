@@ -1,11 +1,18 @@
 import datetime
 import logging
+from enum import StrEnum
 from typing import TypedDict
 
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 date_format = "%Y/%m/%d %H:%M:%S"
 logger = logging.getLogger(__name__)
+
+
+class LogTable(StrEnum):
+    API_IMPORT_LOG = "log_api_import"
+    IMPORT_LOG = "log_import"
+    TRANSFORM_LOG = "log_transform"
 
 
 class ApiImportLog(TypedDict):
@@ -35,7 +42,12 @@ class TransformLog(TypedDict):
     status: str
 
 
-def insert(conn_id: str, data: list[dict[str, str]], table_name: str) -> None:
+LOG = ApiImportLog | ImportLog | TransformLog
+
+
+def insert_log(conn_id: str, data: list[LOG], table_name: LogTable) -> None:
+    if not data:
+        return
     columns = list(data[0].keys())
     data = [list(record.values()) for record in data]
     columns_names = ", ".join(columns)

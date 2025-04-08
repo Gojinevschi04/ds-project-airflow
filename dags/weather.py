@@ -8,9 +8,9 @@ from airflow.decorators import dag, task
 from airflow.models import Param, Variable
 from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from helpers.db import select
+from helpers.logs import LogTable, insert_log
 from hooks.weather import WeatherApiHook
 from operators.db_insert import DbInsertOperator
-from operators.log_insert import LogInsertOperator
 
 RUN_HISTORICAL = Variable.get("RUN_HISTORICAL", "false") == "true"
 
@@ -74,7 +74,8 @@ def Weather() -> None:
 
         for index, iso, _ in regions:
             result = weather_hook.get_weather(iso, index, start_date, end_date)
-            api_import_log.append({"country_id": index, **weather_hook.errors})
+            if weather_hook.errors:
+                api_import_log.append({"country_id": index, **weather_hook.errors})
             if not result:
                 continue
             file_name = f"weather_{iso}.json"
@@ -99,10 +100,8 @@ def Weather() -> None:
                         "rows_count": len(result),
                     }
                 )
-        if api_import_log:
-            ti.xcom_push(key="log_api_import", value=api_import_log)
-        if import_log:
-            ti.xcom_push(key="log_import", value=import_log)
+        insert_log("pg_conn", api_import_log, LogTable.API_IMPORT_LOG)
+        insert_log("pg_conn", import_log, LogTable.IMPORT_LOG)
 
     @task
     def transform(**kwargs) -> None:
@@ -142,8 +141,7 @@ def Weather() -> None:
                 shutil.move(file_path, os.path.join(destination_path_error, file_name))
 
         kwargs["ti"].xcom_push("weather_data", data)
-        if transform_log:
-            kwargs["ti"].xcom_push("log_transform", transform_log)
+        insert_log("pg_conn", transform_log, LogTable.TRANSFORM_LOG)
 
     load = DbInsertOperator(
         task_id="load",
@@ -154,12 +152,7 @@ def Weather() -> None:
         unique_columns=["date", "country_id"],
     )
 
-    log = LogInsertOperator(
-        task_id="log",
-        postgres_conn_id="pg_conn",
-    )
-
-    init >> extract() >> transform() >> load >> log
+    init >> extract() >> transform() >> load
 
 
 dag = Weather()
