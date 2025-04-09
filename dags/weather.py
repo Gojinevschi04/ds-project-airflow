@@ -42,7 +42,7 @@ default_args = {
             format="date",
         ),
         "end_date": Param(
-            "2025-02-03",
+            "2025-03-02",
             type="string",
             format="date",
         ),
@@ -53,6 +53,12 @@ def Weather() -> None:
         task_id="create_weather_table",
         conn_id="pg_conn",
         sql="sql/create_weather_table.sql",
+    )
+
+    init_dw = SQLExecuteQueryOperator(
+        task_id="create_dw_covid_weather_fact_table",
+        conn_id="pg_conn",
+        sql="sql/create_dw_covid_weather_fact_table.sql",
     )
 
     @task
@@ -152,7 +158,13 @@ def Weather() -> None:
         unique_columns=["date", "country_id"],
     )
 
-    init >> extract() >> transform() >> load
+    load_dw_weather_fact = SQLExecuteQueryOperator(
+        task_id="load_dw_weather_fact",
+        conn_id="pg_conn",
+        sql="sql/load_dw_weather_fact.sql",
+    )
+
+    init >> init_dw >> extract() >> transform() >> load, load_dw_weather_fact
 
 
 dag = Weather()

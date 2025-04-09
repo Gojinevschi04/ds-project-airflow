@@ -42,7 +42,7 @@ default_args = {
             format="date",
         ),
         "end_date": Param(
-            "2020-02-02",
+            "2020-03-02",
             type="string",
             format="date",
         ),
