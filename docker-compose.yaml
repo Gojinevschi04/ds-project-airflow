@@ -49,7 +49,7 @@ x-airflow-common:
   # In order to add custom dependencies or upgrade provider packages you can use your extended image.
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
-#  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.10.5}
+  #  image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:2.10.5}
   build: .
   environment:
     &airflow-common-env
@@ -118,6 +118,16 @@ services:
       retries: 50
       start_period: 30s
     restart: always
+
+  superset:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.superset
+    ports:
+      - "8091:8088"
+    volumes:
+      - ./superset:/app/superset_home
 
   airflow-webserver:
     <<: *airflow-common

@@ -1,0 +1,8 @@
+FROM apache/superset:latest
+
+ENV SUPERSET_SECRET_KEY=value
+COPY requirements-superset.txt requirements-superset.txt
+RUN pip install -r requirements-superset.txt
+RUN superset fab create-admin --username airflow --firstname airflow --lastname Airflow --email airflow@superset.com --password airflow
+RUN superset db upgrade
+RUN superset init
