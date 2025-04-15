@@ -88,21 +88,23 @@ def Covid() -> None:
                         f"{path}/{file_name}", indent=2, orient="records"
                     )
                 except Exception:
-                    import_log.append(
-                        {
-                            "country_id": index,
-                            "batch_date": datetime.datetime.now().strftime("%Y-%m-%d"),
-                            "import_directory_name": path,
-                            "import_file_name": file_name,
-                            "file_created_date": datetime.datetime.now().strftime(
-                                "%Y-%m-%d %H:%M:%S"
-                            ),
-                            "file_last_modified_date": datetime.datetime.now().strftime(
-                                "%Y-%m-%d %H:%M:%S"
-                            ),
-                            "rows_count": len(dfs),
-                        }
-                    )
+                    pass
+
+                import_log.append(
+                    {
+                        "country_id": index,
+                        "batch_date": datetime.datetime.now().strftime("%Y-%m-%d"),
+                        "import_directory_name": path,
+                        "import_file_name": file_name,
+                        "file_created_date": datetime.datetime.now().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),
+                        "file_last_modified_date": datetime.datetime.now().strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        ),
+                        "rows_count": len(dfs),
+                    }
+                )
             current_date += step
         insert_log("pg_conn", api_import_log, LogTable.API_IMPORT_LOG)
         insert_log("pg_conn", import_log, LogTable.IMPORT_LOG)
@@ -130,19 +132,22 @@ def Covid() -> None:
                 shutil.move(
                     file_path, os.path.join(destination_path_success, file_name)
                 )
+                status = "success"
 
             except Exception:
-                transform_log.append(
-                    {
-                        "batch_date": datetime.datetime.now().strftime("%Y-%m-%d"),
-                        "country_id": 1,
-                        "processed_directory_name": str(file_path),
-                        "processed_file_name": file_name,
-                        "rows_count": len(covid_data),
-                        "status": "error",
-                    }
-                )
+                status = "error"
                 shutil.move(file_path, os.path.join(destination_path_error, file_name))
+
+            transform_log.append(
+                {
+                    "batch_date": datetime.datetime.now().strftime("%Y-%m-%d"),
+                    "country_id": covid_data[0]["country_id"],
+                    "processed_directory_name": str(file_path),
+                    "processed_file_name": file_name,
+                    "rows_count": len(covid_data),
+                    "status": status,
+                }
+            )
 
         kwargs["ti"].xcom_push("covid_data", data)
         insert_log("pg_conn", transform_log, LogTable.TRANSFORM_LOG)

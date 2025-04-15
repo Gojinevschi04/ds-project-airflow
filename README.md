@@ -62,7 +62,8 @@ The default account has the login `airflow` and the password
 `airflow`.
 
 ### Creating default db connection
-Complete the form `http://localhost:8080/connection/add/` with 
+
+Complete the form `http://localhost:8080/connection/add/` with
 Connection Id: `pg_conn`
 Connection Type: `postgres`
 Host: `postgres`
@@ -70,3 +71,22 @@ Schema: `airflow`
 Login: `airflow`
 Password: `airflow`
 Port: `5432`
+
+### Superset Reporting
+
+The Superset web interface is available at:
+`http://localhost:8088`.
+Login credentials (default):
+Username: `airflow`
+Password: `airflow`
+
+### Connecting to PostgreSQL
+
+Go to Data → Databases → + Database.
+Select PostgreSQL.
+Fill in the fields:
+SQLAlchemy URI:
+`postgresql+psycopg2://airflow:airflow@postgres:5432/airflow`
+Click Test Connection and then Connect.
+
+You can now explore tables like covid, weather, and dw_covid_weather_fact, and build visual dashboards for reporting.

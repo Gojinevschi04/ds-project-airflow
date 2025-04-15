@@ -1,0 +1,55 @@
+slice_name: Transform success rate
+description: null
+certified_by: null
+certification_details: null
+viz_type: gauge_chart
+params:
+  datasource: 3__table
+  viz_type: gauge_chart
+  slice_id: 9
+  groupby: []
+  metric:
+    aggregate: null
+    column: null
+    datasourceWarning: false
+    expressionType: SQL
+    hasCustomLabel: false
+    label: '100.0 * COUNT(*) FILTER (WHERE status = ''success'') / COUNT(*)
+
+      '
+    optionName: metric_nmv99p8u3de_1m91rcuilhz
+    sqlExpression: '100.0 * COUNT(*) FILTER (WHERE status = ''success'') / COUNT(*)
+
+      '
+  adhoc_filters:
+  - clause: WHERE
+    comparator: No filter
+    expressionType: SIMPLE
+    operator: TEMPORAL_RANGE
+    subject: batch_date
+  row_limit: 10
+  start_angle: 225
+  end_angle: -45
+  color_scheme: supersetColors
+  font_size: 15
+  number_format: SMART_NUMBER
+  value_formatter: '{value}'
+  show_pointer: true
+  animation: true
+  split_number: 10
+  show_progress: true
+  overlap: true
+  extra_form_data: {}
+  dashboards:
+  - 1
+query_context: '{"datasource":{"id":3,"type":"table"},"force":false,"queries":[{"filters":[{"col":"batch_date","op":"TEMPORAL_RANGE","val":"No
+  filter"}],"extras":{"having":"","where":""},"applied_time_extras":{},"columns":[],"metrics":[{"aggregate":null,"column":null,"datasourceWarning":false,"expressionType":"SQL","hasCustomLabel":false,"label":"100.0
+  * COUNT(*) FILTER (WHERE status = ''success'') / COUNT(*)\n","optionName":"metric_nmv99p8u3de_1m91rcuilhz","sqlExpression":"100.0
+  * COUNT(*) FILTER (WHERE status = ''success'') / COUNT(*)\n"}],"annotation_layers":[],"row_limit":10,"series_limit":0,"order_desc":true,"url_params":{},"custom_params":{},"custom_form_data":{}}],"form_data":{"datasource":"3__table","viz_type":"gauge_chart","slice_id":9,"groupby":[],"metric":{"aggregate":null,"column":null,"datasourceWarning":false,"expressionType":"SQL","hasCustomLabel":false,"label":"100.0
+  * COUNT(*) FILTER (WHERE status = ''success'') / COUNT(*)\n","optionName":"metric_nmv99p8u3de_1m91rcuilhz","sqlExpression":"100.0
+  * COUNT(*) FILTER (WHERE status = ''success'') / COUNT(*)\n"},"adhoc_filters":[{"clause":"WHERE","comparator":"No
+  filter","expressionType":"SIMPLE","operator":"TEMPORAL_RANGE","subject":"batch_date"}],"row_limit":10,"start_angle":225,"end_angle":-45,"color_scheme":"supersetColors","font_size":15,"number_format":"SMART_NUMBER","value_formatter":"{value}","show_pointer":true,"animation":true,"split_number":10,"show_progress":true,"overlap":true,"extra_form_data":{},"dashboards":[1],"force":false,"result_format":"json","result_type":"full"},"result_format":"json","result_type":"full"}'
+cache_timeout: null
+uuid: b178be76-22c8-41fc-823e-a5eca050cb16
+version: 1.0.0
+dataset_uuid: 4b6d6e52-f284-4ed6-b76f-82b72c9a8fa1
