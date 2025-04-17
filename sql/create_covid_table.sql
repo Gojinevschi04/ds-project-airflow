@@ -1,20 +1,21 @@
-create table if not exists covid
-(
-    id             bigserial                   not null
-        constraint covid_pk
-            primary key,
-    date           date                        not null,
-    last_update    timestamp without time zone not null,
-    confirmed      integer                     not null,
-    confirmed_diff integer                     not null,
-    deaths         integer                     not null,
-    deaths_diff    integer                     not null,
-    recovered      integer                     not null,
-    recovered_diff integer                     not null,
-    active         integer                     not null,
-    active_diff    integer                     not null,
-    fatality_rate  real                        not null,
-    country_id     integer                     not null
-        constraint covid_regions_id_fk
-            references regions (id)
-);
+CREATE TABLE IF NOT EXISTS dbo.covid
+    (
+        id bigserial NOT NULL
+            CONSTRAINT covid_pk
+                PRIMARY KEY,
+        date date NOT NULL,
+        last_update timestamp without time zone NOT NULL,
+        confirmed integer NOT NULL,
+        confirmed_diff integer NOT NULL,
+        deaths integer NOT NULL,
+        deaths_diff integer NOT NULL,
+        recovered integer NOT NULL,
+        recovered_diff integer NOT NULL,
+        active integer NOT NULL,
+        active_diff integer NOT NULL,
+        fatality_rate real NOT NULL,
+        country_id integer NOT NULL
+            CONSTRAINT covid_regions_id_fk REFERENCES dbo.regions (id),
+        CONSTRAINT covid_pk_name_iso
+            UNIQUE (country_id, date)
+    );

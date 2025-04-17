@@ -1,10 +1,11 @@
-drop table if exists regions cascade;
-create table if not exists regions
-(
-    id   serial       not null
-        constraint regions_pk primary key,
-    code char(20)     not null,
-    name varchar(100) not null,
-    constraint regions_pk_name_iso
-        unique (name, code)
-);
+CREATE SCHEMA IF NOT EXISTS dbo;
+CREATE TABLE IF NOT EXISTS dbo.regions
+    (
+        id serial NOT NULL
+            CONSTRAINT regions_pk
+                PRIMARY KEY,
+        code varchar(20) NOT NULL,
+        name varchar(100) NOT NULL,
+        CONSTRAINT regions_pk_name_iso
+            UNIQUE (name, code)
+    );
