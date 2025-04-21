@@ -6,16 +6,38 @@ from typing import Any
 
 import pandas as pd
 from airflow.decorators import dag, task
+from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 from helpers.db import select
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score
+from operators.db_insert import DbInsertOperator
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 
-MODEL_PATH = "/opt/airflow/data/models/model.pkl"
+MODEL_PATH = "/opt/airflow/data/models/model_regression_1.pkl"
+COUNTRY_ID = 1
+TARGET = "active"
+FEATURE_COLUMNS = ["confirmed", "deaths",
+                   "average_temperature_c", "average_humidity", "total_precipitation_mm"
+                   ]
 
 
-@dag(schedule_interval="@daily", start_date=datetime(2025, 3, 1), catchup=False, tags=["ml"])
+@dag(
+    schedule_interval="@daily",
+    start_date=datetime(2025, 3, 1),
+    template_searchpath="/opt/project/",
+    catchup=False,
+    tags=["ml"],
+)
 def ML() -> None:
+    init = SQLExecuteQueryOperator(
+        task_id="init_visualization_tables",
+        conn_id="pg_conn",
+        sql=[
+            "sql/create_visualization_coefficients_table.sql",
+            "sql/create_visualization_covid_weather_fact_table.sql",
+        ],
+    )
+
     @task()
     def extract_data() -> list[dict[str, Any]]:
         data = select("pg_conn", "dbo.dw_covid_weather_fact")
@@ -27,73 +49,59 @@ def ML() -> None:
         return df.to_dict("records")
 
     @task()
-    def train_model(data_dict) -> None:
+    def train_model(data_dict, country_id: int = None) -> None:
         df = pd.DataFrame.from_dict(data_dict)
 
-        df["target"] = (df["fatality_rate"] >= 0.02).astype(int)
+        if country_id is not None:
+            df = df[df["country_id"] == country_id]
 
-        X = df[
-            [
-                "confirmed",
-                "recovered",
-                "deaths",
-                "active",
-                "average_temperature_c",
-                "average_humidity",
-                "total_precipitation_mm",
-            ]
-        ]
-        y = df["target"]
+        X = df[FEATURE_COLUMNS]
+
+        y = df[TARGET]
 
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42
         )
 
-        model = LogisticRegression(max_iter=1000)
+        model = LinearRegression()
         model.fit(X_train, y_train)
 
         y_pred = model.predict(X_test)
-        acc = accuracy_score(y_test, y_pred)
-        logging.info(f"Model accuracy: {acc:.2f}")
+        # acc = accuracy_score(y_test, y_pred)
+        # logging.info(f"Model accuracy: {acc:.2f}")
+
+        mse = mean_squared_error(y_test, y_pred)
+        logging.info(f"MSE: {mse:.2f}")
 
         with open(MODEL_PATH, "wb") as f:
             pickle.dump(model, f)
 
-        return "Model trained and saved"
+        logging.info("Model trained and saved")
 
     @task()
-    def predict(data_dict) -> None:
+    def predict(data_dict, country_id: int = None, **kwargs) -> None:
         df = pd.DataFrame.from_dict(data_dict)
 
-        features = df[
-            [
-                "confirmed",
-                "recovered",
-                "deaths",
-                "active",
-                "average_temperature_c",
-                "average_humidity",
-                "total_precipitation_mm",
-            ]
-        ]
+        if country_id is not None:
+            df = df[df["country_id"] == country_id]
 
         with open(MODEL_PATH, "rb") as f:
             model = pickle.load(f)
 
-        df["prediction"] = model.predict(features)
+        columns = ["unique_id", "country_id", "date"]
 
-        result_df = df[
-            ["unique_id", "country_id", "date", "fatality_rate", "prediction"]
-        ]
+        df["prediction"] = model.predict(df[FEATURE_COLUMNS])
 
-        # engine = create_engine(DB_URI)
-        # result_df.to_sql("prediction_results", engine, if_exists="replace", index=False)
+        result_df = df[columns + ["prediction"]]
+        result_df["real_value"] = df[TARGET]
 
-        return "Predictions saved"
+        kwargs["ti"].xcom_push("predictions", result_df.to_dict("records"))
+        logging.info("Predictions saved")
 
-    def view_model() -> None:
+    @task()
+    def view_model(**kwargs) -> None:
         if not os.path.exists(MODEL_PATH):
-            print(f"Model file not found at: {MODEL_PATH}")
+            logging.error(f"Model file not found at: {MODEL_PATH}")
             return
 
         with open(MODEL_PATH, "rb") as f:
@@ -104,26 +112,40 @@ def ML() -> None:
         logging.info(model)
 
         if hasattr(model, "coef_"):
-            feature_names = [
-                "confirmed",
-                "deaths",
-                "recovered",
-                "active",
-                "temperature",
-                "humidity",
-                "precipitation",
-            ]
-            coef_df = pd.DataFrame(model.coef_, columns=feature_names)
+            coef_df = pd.DataFrame({
+                "name": FEATURE_COLUMNS,
+                "value": model.coef_,
+            })
             logging.info("Coefficients:")
             logging.info(coef_df.T)
+
+            kwargs["ti"].xcom_push("coefficients", coef_df.to_dict("records"))
         else:
             logging.error("Model does not have coef_ attribute (maybe not a linear model).")
 
-        if hasattr(model, "intercept_"):
-            logging.error("Intercept:", model.intercept_)
+        # if hasattr(model, "intercept_"):
+        #     logging.error("Intercept:", model.intercept_)
+
+    insert_coefficients = DbInsertOperator(
+        task_id="insert_coefficients",
+        ti_id="view_model",
+        ti_key="coefficients",
+        table="visualization_coefficients",
+        postgres_conn_id="pg_conn",
+    )
+
+    insert_predictions = DbInsertOperator(
+        task_id="insert_predictions",
+        ti_id="predict",
+        ti_key="predictions",
+        table="visualization_covid_weather_fact",
+        # unique_columns=["date", "country_id"],
+        postgres_conn_id="pg_conn",
+    )
 
     data = extract_data()
-    train_model(data) >> predict(data) >> view_model()
+    train_model(data, country_id=COUNTRY_ID)
+    init >> predict(data, country_id=COUNTRY_ID) >> insert_predictions >> view_model() >> insert_coefficients
 
 
 dag = ML()
