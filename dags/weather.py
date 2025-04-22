@@ -82,6 +82,8 @@ def Weather() -> None:
             result = weather_hook.get_weather(iso, index, start_date, end_date)
             if weather_hook.errors:
                 api_import_log.append({"country_id": index, **weather_hook.errors})
+            api_import_log.append({"country_id": index, **weather_hook.errors})
+
             if not result:
                 continue
             file_name = f"weather_{iso}.json"
@@ -91,21 +93,23 @@ def Weather() -> None:
                     f"{path}/{file_name}", indent=2, orient="records"
                 )
             except Exception:
-                import_log.append(
-                    {
-                        "country_id": index,
-                        "batch_date": datetime.datetime.now().strftime("%Y-%m-%d"),
-                        "import_directory_name": path,
-                        "import_file_name": file_name,
-                        "file_created_date": datetime.datetime.now().strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        ),
-                        "file_last_modified_date": datetime.datetime.now().strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        ),
-                        "rows_count": len(result),
-                    }
-                )
+                pass
+
+            import_log.append(
+                {
+                    "country_id": index,
+                    "batch_date": datetime.datetime.now().strftime("%Y-%m-%d"),
+                    "import_directory_name": path,
+                    "import_file_name": file_name,
+                    "file_created_date": datetime.datetime.now().strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    ),
+                    "file_last_modified_date": datetime.datetime.now().strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    ),
+                    "rows_count": len(result),
+                })
+
         insert_log("pg_conn", api_import_log, LogTable.API_IMPORT_LOG)
         insert_log("pg_conn", import_log, LogTable.IMPORT_LOG)
 
@@ -132,19 +136,22 @@ def Weather() -> None:
                 shutil.move(
                     file_path, os.path.join(destination_path_success, file_name)
                 )
+                status = "success"
 
             except Exception:
-                transform_log.append(
-                    {
-                        "batch_date": datetime.datetime.now().strftime("%Y-%m-%d"),
-                        "country_id": weather_data[0]["country_id"],
-                        "processed_directory_name": file_path,
-                        "processed_file_name": file_name,
-                        "rows_count": len(weather_data),
-                        "status": "error",
-                    }
-                )
+                status = "error"
                 shutil.move(file_path, os.path.join(destination_path_error, file_name))
+
+            transform_log.append(
+                {
+                    "batch_date": datetime.datetime.now().strftime("%Y-%m-%d"),
+                    "country_id": weather_data[0]["country_id"],
+                    "processed_directory_name": str(file_path),
+                    "processed_file_name": file_name,
+                    "rows_count": len(weather_data),
+                    "status": status,
+                }
+            )
 
         kwargs["ti"].xcom_push("weather_data", data)
         insert_log("pg_conn", transform_log, LogTable.TRANSFORM_LOG)
