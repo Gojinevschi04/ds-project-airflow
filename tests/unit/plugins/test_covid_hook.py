@@ -4,8 +4,10 @@ from unittest.mock import Mock, patch
 import pandas as pd
 from hooks.covid import CovidApiHook
 
+from tests.conftest import COVID_LIST, REGIONS_LIST
 
-def test_get_countries_success(mock_regions: dict[str, list[dict[str, str]]]) -> None:
+
+def test_get_countries_success(mock_regions: REGIONS_LIST) -> None:
     mock_response = Mock()
     mock_response.status_code = 200
     mock_response.json.return_value = mock_regions
@@ -30,7 +32,7 @@ def test_get_countries_error() -> None:
     assert result.empty
 
 
-def test_get_covid_success(mock_covid_data: dict[str, dict[str, int]]) -> None:
+def test_get_covid_success(mock_covid_data: COVID_LIST) -> None:
     mock_response = Mock()
     mock_response.status_code = 200
     mock_response.json.return_value = mock_covid_data

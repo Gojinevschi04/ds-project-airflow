@@ -67,10 +67,16 @@ class CovidApiHook(BaseHook):
             self.errors = {
                 "code_response": response.status_code,
                 "error_messages": response.reason,
-                "start_time": start_time.strftime("%Y-%m-%d %H:%M:%S"),
-                "end_time": end_time.strftime("%Y-%m-%d %H:%M:%S"),
+                "start_time": start_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
+                "end_time": end_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
             }
             return {}
+        self.errors = {
+            "code_response": "200",
+            "error_messages": " ",
+            "start_time": start_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
+            "end_time": end_time.strftime("%Y-%m-%d %H:%M:%S.%f"),
+        }
 
         self.logger.info("Beginning request")
         data = response.json()
